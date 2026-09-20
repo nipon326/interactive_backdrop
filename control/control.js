@@ -11,7 +11,10 @@ requirePin();
 // ---------- Backdrop image picker ----------
 const imageGrid = document.getElementById("image-grid");
 const driveStatus = document.getElementById("drive-status");
+const previewImg = document.getElementById("current-preview-img");
+const previewLabel = document.getElementById("current-preview-label");
 let currentFileId = null;
+let loadedFiles = [];
 
 document.getElementById("btn-load-drive").addEventListener("click", loadDriveImages);
 
@@ -20,6 +23,7 @@ async function loadDriveImages() {
   imageGrid.innerHTML = "";
   try {
     const files = await fetchOrderedImages(DRIVE_FOLDER_ID, DRIVE_API_KEY);
+    loadedFiles = files;
     if (files.length === 0) {
       driveStatus.textContent = "ไม่พบภาพในโฟลเดอร์ (เช็คการแชร์และชื่อไฟล์)";
       return;
@@ -34,30 +38,35 @@ async function loadDriveImages() {
       img.src = driveImageUrlCandidates(f.id, 400)[0];
       img.onerror = () => { img.src = driveImageUrlCandidates(f.id, 400)[1]; };
 
+      const badge = document.createElement("div");
+      badge.className = "badge";
+      badge.textContent = "✓";
+
       const label = document.createElement("div");
       label.className = "label";
       label.textContent = f.name;
 
       thumb.appendChild(img);
+      thumb.appendChild(badge);
       thumb.appendChild(label);
-      thumb.addEventListener("click", () => selectImage(f.id, thumb));
+      thumb.addEventListener("click", () => selectImage(f.id));
       imageGrid.appendChild(thumb);
     });
     syncActiveThumb();
+    updatePreview();
   } catch (err) {
     console.error(err);
     driveStatus.textContent = "โหลดไม่สำเร็จ: " + err.message;
   }
 }
 
-async function selectImage(fileId, thumbEl) {
-  currentFileId = fileId;
+async function selectImage(fileId) {
   await setDoc(doc(db, "state", "backdrop"), {
     mode: "image",
     fileId,
     updatedAt: serverTimestamp(),
   });
-  syncActiveThumb();
+  // ไม่ต้องอัปเดต currentFileId/preview เอง — state listener ด้านล่างจะรับค่ากลับมาสะท้อนให้ทุกจอ/ทุกคนที่เปิด control อยู่พร้อมกัน
 }
 
 function syncActiveThumb() {
@@ -65,6 +74,34 @@ function syncActiveThumb() {
     el.classList.toggle("active", el.dataset.fileId === currentFileId);
   });
 }
+
+function updatePreview() {
+  if (!currentFileId) {
+    previewImg.removeAttribute("src");
+    previewLabel.textContent = "ยังไม่ได้เลือกภาพ";
+    return;
+  }
+  const urls = driveImageUrlCandidates(currentFileId, 800);
+  let i = 0;
+  const tryNext = () => {
+    if (i >= urls.length) return;
+    previewImg.onerror = () => { i += 1; tryNext(); };
+    previewImg.src = urls[i];
+  };
+  tryNext();
+  const match = loadedFiles.find((f) => f.id === currentFileId);
+  previewLabel.textContent = match ? `🟢 กำลังขึ้นจอ: ${match.name}` : "🟢 กำลังขึ้นจอ";
+}
+
+// state/backdrop เป็น shared state — ฟังตลอดเวลา เพื่อให้ทีมงานหลายคน/หลายเครื่องเห็นตรงกันเสมอ
+// (คนคุมภาพกับคนตรวจคอมเมนต์เปิด /control คนละเครื่องพร้อมกันได้ ข้อมูลจะ sync กันเองผ่าน Firestore)
+onSnapshot(doc(db, "state", "backdrop"), (snap) => {
+  if (!snap.exists()) return;
+  const data = snap.data();
+  currentFileId = data.fileId || null;
+  syncActiveThumb();
+  updatePreview();
+});
 
 // ---------- Mode switch (wordcloud) ----------
 document.getElementById("btn-mode-wordcloud").addEventListener("click", async () => {
@@ -86,7 +123,7 @@ document.getElementById("btn-refresh-wordcloud").addEventListener("click", async
 
 // กลับโหมดภาพง่ายๆ: คลิกภาพใดๆ ในกริดจะพากลับโหมด image โดยอัตโนมัติ (ผ่าน selectImage)
 
-// ---------- Pending questions moderation ----------
+// ---------- Pending comments moderation ----------
 const pendingList = document.getElementById("pending-list");
 const pendingQuery = query(
   collection(db, "questions"),
@@ -94,47 +131,57 @@ const pendingQuery = query(
   orderBy("createdAt", "asc")
 );
 
-onSnapshot(pendingQuery, (snap) => {
-  if (snap.empty) {
-    pendingList.innerHTML = '<p class="empty-hint">ยังไม่มีคำถามเข้ามา</p>';
-    return;
+onSnapshot(
+  pendingQuery,
+  (snap) => {
+    if (snap.empty) {
+      pendingList.innerHTML = '<p class="empty-hint">ยังไม่มีคอมเมนต์เข้ามา</p>';
+      return;
+    }
+    pendingList.innerHTML = "";
+    snap.forEach((docSnap) => {
+      const q = docSnap.data();
+      const item = document.createElement("div");
+      item.className = "pending-item";
+
+      const nameEl = document.createElement("div");
+      nameEl.className = "q-name";
+      nameEl.textContent = q.name || "ไม่ระบุชื่อ";
+
+      const textEl = document.createElement("div");
+      textEl.className = "q-text";
+      textEl.textContent = q.text;
+
+      const actions = document.createElement("div");
+      actions.className = "q-actions";
+
+      const approveBtn = document.createElement("button");
+      approveBtn.className = "btn-approve";
+      approveBtn.textContent = "✅ Approve";
+      approveBtn.addEventListener("click", () => setStatus(docSnap.id, "approved"));
+
+      const rejectBtn = document.createElement("button");
+      rejectBtn.className = "btn-reject";
+      rejectBtn.textContent = "❌ Reject";
+      rejectBtn.addEventListener("click", () => setStatus(docSnap.id, "rejected"));
+
+      actions.appendChild(approveBtn);
+      actions.appendChild(rejectBtn);
+
+      item.appendChild(nameEl);
+      item.appendChild(textEl);
+      item.appendChild(actions);
+      pendingList.appendChild(item);
+    });
+  },
+  (err) => {
+    console.error("pending comments listener failed", err);
+    pendingList.innerHTML =
+      '<p class="error-hint">โหลดคอมเมนต์ไม่สำเร็จ (มักเกิดจาก Firestore ยังไม่มี index สำหรับ query นี้) ' +
+      "เปิด Console ของเบราว์เซอร์ (F12) หาข้อความ error ที่มีลิงก์ \"create it here\" แล้วกดลิงก์นั้นเพื่อสร้าง index ครั้งแรก " +
+      "(รอสัก 1-2 นาทีแล้วรีเฟรชหน้านี้ใหม่)</p>";
   }
-  pendingList.innerHTML = "";
-  snap.forEach((docSnap) => {
-    const q = docSnap.data();
-    const item = document.createElement("div");
-    item.className = "pending-item";
-
-    const nameEl = document.createElement("div");
-    nameEl.className = "q-name";
-    nameEl.textContent = q.name || "ไม่ระบุชื่อ";
-
-    const textEl = document.createElement("div");
-    textEl.className = "q-text";
-    textEl.textContent = q.text;
-
-    const actions = document.createElement("div");
-    actions.className = "q-actions";
-
-    const approveBtn = document.createElement("button");
-    approveBtn.className = "btn-approve";
-    approveBtn.textContent = "✅ Approve";
-    approveBtn.addEventListener("click", () => setStatus(docSnap.id, "approved"));
-
-    const rejectBtn = document.createElement("button");
-    rejectBtn.className = "btn-reject";
-    rejectBtn.textContent = "❌ Reject";
-    rejectBtn.addEventListener("click", () => setStatus(docSnap.id, "rejected"));
-
-    actions.appendChild(approveBtn);
-    actions.appendChild(rejectBtn);
-
-    item.appendChild(nameEl);
-    item.appendChild(textEl);
-    item.appendChild(actions);
-    pendingList.appendChild(item);
-  });
-});
+);
 
 async function setStatus(id, status) {
   await updateDoc(doc(db, "questions", id), {

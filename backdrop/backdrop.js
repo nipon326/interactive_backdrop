@@ -5,8 +5,8 @@ import {
 import { driveImageUrlCandidates } from "../shared/drive.js";
 import { THAI_STOPWORDS } from "../shared/thai-stopwords.js";
 
-const MAX_STICKERS = 80;
-const MAX_COMMENTS = 10;
+const MAX_STICKERS = 36;
+const MAX_COMMENTS = 6;
 let stickerCount = 0;
 let commentCount = 0;
 
@@ -58,15 +58,16 @@ onSnapshot(stickerQuery, (snap) => {
   stickersLoaded = true;
 });
 
+// สติกเกอร์ลอยฝั่งขวาของจอ (ไม่กระจายเต็มขอบล่าง) กันไปบังกลางภาพ backdrop
 function spawnSticker(emoji) {
   if (stickerCount >= MAX_STICKERS || !emoji) return;
   stickerCount += 1;
   const el = document.createElement("div");
   el.className = "floating-sticker";
   el.textContent = emoji;
-  el.style.setProperty("--x", `${5 + Math.random() * 85}vw`);
-  el.style.setProperty("--drift", `${Math.random() * 30 - 15}vw`);
-  el.style.setProperty("--size", `${2 + Math.random() * 2}rem`);
+  el.style.setProperty("--x", `${58 + Math.random() * 37}vw`);
+  el.style.setProperty("--drift", `${Math.random() * 14 - 7}vw`);
+  el.style.setProperty("--size", `${1.8 + Math.random() * 1.6}rem`);
   el.style.setProperty("--dur", `${2.5 + Math.random() * 2}s`);
   el.addEventListener("animationend", () => { el.remove(); stickerCount -= 1; });
   stickerLayer.appendChild(el);
@@ -80,14 +81,21 @@ const commentQuery = query(
   orderBy("createdAt", "desc"),
   limit(20)
 );
-onSnapshot(commentQuery, (snap) => {
-  if (commentsLoaded) {
-    snap.docChanges().forEach((c) => {
-      if (c.type === "added") spawnComment(c.doc.data());
-    });
+onSnapshot(
+  commentQuery,
+  (snap) => {
+    if (commentsLoaded) {
+      snap.docChanges().forEach((c) => {
+        if (c.type === "added") spawnComment(c.doc.data());
+      });
+    }
+    commentsLoaded = true;
+  },
+  (err) => {
+    // มักเกิดจาก Firestore ยังไม่มี composite index สำหรับ query นี้ (ต้องสร้างครั้งแรกผ่าน Firebase Console)
+    console.error("approved comments listener failed", err);
   }
-  commentsLoaded = true;
-});
+);
 
 function spawnComment({ name, text }) {
   if (commentCount >= MAX_COMMENTS || !text) return;
@@ -106,8 +114,8 @@ function spawnComment({ name, text }) {
   el.appendChild(nameEl);
   el.appendChild(textEl);
 
-  el.style.setProperty("--x", `${Math.random() * 8}vw`);
-  el.style.setProperty("--drift", `${2 + Math.random() * 8}vw`);
+  el.style.setProperty("--x", `${Math.random() * 6}vw`);
+  el.style.setProperty("--drift", `${1 + Math.random() * 5}vw`);
   el.style.setProperty("--dur", `${5.5 + Math.random() * 1.5}s`);
   el.addEventListener("animationend", () => { el.remove(); commentCount -= 1; });
   commentLayer.appendChild(el);

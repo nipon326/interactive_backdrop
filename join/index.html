@@ -9,24 +9,41 @@
 </head>
 <body>
   <header class="join-header">
+    <img class="org-logo" src="../assets/mwa-logo.png" alt="การประปานครหลวง"
+         onerror="this.style.display='none'" />
     <h1>💧 The Flow of Legacy</h1>
-    <p>ร่วมส่งความรู้สึกขึ้นจอกันเถอะ</p>
+    <p>มาร่วมส่งความรู้สึกดีๆ ให้กันในวันนี้นะ 💙</p>
+    <p class="event-date">23 กันยายน 2569</p>
   </header>
 
   <nav class="tabs">
     <button class="tab-btn active" data-tab="sticker">✨ สติกเกอร์</button>
+    <button class="tab-btn" data-tab="question">💬 คอมเมนต์</button>
     <button class="tab-btn" data-tab="message">💌 ฝากถึงน้องๆ</button>
-    <button class="tab-btn" data-tab="question">🎤 ฝากคำถาม</button>
   </nav>
 
   <main>
     <section id="tab-sticker" class="tab-panel active">
-      <p class="hint">แตะสติกเกอร์ให้ลอยขึ้นจอเวทีได้เลย</p>
+      <p class="hint">แตะสติกเกอร์ที่ชอบ ส่งความรู้สึกดีๆ ไปให้พี่ๆ บนเวทีกันเลย ✨</p>
       <div id="sticker-grid" class="sticker-grid"></div>
+      <div class="custom-sticker-row">
+        <input type="text" id="custom-sticker-input" placeholder="พิมพ์อิโมจิของคุณเอง 🙂" maxlength="4" />
+        <button id="custom-sticker-send" class="btn-secondary">ส่ง</button>
+      </div>
+    </section>
+
+    <section id="tab-question" class="tab-panel">
+      <p class="hint">อยากฝากคำพูดหรือคำถามถึงพี่ๆ บนเวทีไหมคะ/ครับ พิมพ์มาได้เลย ทีมงานจะช่วยดูให้ก่อนสักครู่นะ 💬</p>
+      <form id="question-form">
+        <input type="text" id="question-name" placeholder="ชื่อของคุณ" maxlength="60" required />
+        <textarea id="question-text" rows="4" placeholder="คอมเมนต์ของคุณ..." maxlength="280" required></textarea>
+        <button type="submit" class="btn-primary">ส่งคอมเมนต์</button>
+        <p class="status" id="question-status"></p>
+      </form>
     </section>
 
     <section id="tab-message" class="tab-panel">
-      <p class="hint">อยากฝากอะไรถึงน้องๆ ที่ยังทำงานอยู่ — ข้อความจะถูกรวมเป็น Word Cloud ช่วงท้ายงาน</p>
+      <p class="hint">อยากฝากอะไรถึงน้องๆ ที่ยังทำงานอยู่ไหมคะ/ครับ ทุกข้อความจะถูกร้อยเรียงเป็นคำอวยพรสวยๆ ช่วงท้ายงานนะ 💌</p>
       <form id="message-form">
         <input type="text" id="message-name" placeholder="ชื่อของคุณ" maxlength="60" required />
         <textarea id="message-text" rows="4" placeholder="ฝากอะไรถึงน้องๆ..." maxlength="280" required></textarea>
@@ -34,18 +51,8 @@
         <p class="status" id="message-status"></p>
       </form>
     </section>
-
-    <section id="tab-question" class="tab-panel">
-      <p class="hint">ฝากคำถามถึงบนเวทีได้เลย ทีมงานจะตรวจสอบก่อนขึ้นจอ</p>
-      <form id="question-form">
-        <input type="text" id="question-name" placeholder="ชื่อของคุณ" maxlength="60" required />
-        <textarea id="question-text" rows="4" placeholder="คำถามของคุณ..." maxlength="280" required></textarea>
-        <button type="submit" class="btn-primary">ส่งคำถาม</button>
-        <p class="status" id="question-status"></p>
-      </form>
-    </section>
   </main>
 
-  <script type="module" src="join.js?v=1"></script>
+  <script type="module" src="join.js?v=2"></script>
 </body>
 </html>

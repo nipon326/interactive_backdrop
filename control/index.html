@@ -19,6 +19,12 @@
   <main>
     <section class="panel">
       <h2>🖼️ ภาพ Backdrop (จาก Google Drive)</h2>
+
+      <div class="current-preview">
+        <img id="current-preview-img" alt="" />
+        <p id="current-preview-label" class="preview-label">ยังไม่ได้เลือกภาพ</p>
+      </div>
+
       <div class="row">
         <button id="btn-load-drive" class="btn-primary">โหลดรายการภาพจาก Drive</button>
         <span id="drive-status"></span>
@@ -27,9 +33,9 @@
     </section>
 
     <section class="panel">
-      <h2>❓ คำถามรอ approve</h2>
+      <h2>💬 คอมเมนต์รอ approve</h2>
       <div id="pending-list" class="pending-list">
-        <p class="empty-hint">ยังไม่มีคำถามเข้ามา</p>
+        <p class="empty-hint">ยังไม่มีคอมเมนต์เข้ามา</p>
       </div>
     </section>
 
@@ -45,6 +51,6 @@
     </section>
   </main>
 
-  <script type="module" src="control.js?v=1"></script>
+  <script type="module" src="control.js?v=2"></script>
 </body>
 </html>
