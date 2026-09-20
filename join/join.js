@@ -25,9 +25,23 @@ STICKERS.forEach((emoji) => {
   stickerGrid.appendChild(btn);
 });
 
+// throttle ระดับคนทั้งหน้า (ไม่ใช่แค่ปุ่มเดียว) กัน "ไล่กดคนละอันรัวๆ" หนีคูลดาวน์
+const STICKER_COOLDOWN_MS = 1000;
+let stickerLocked = false;
+
+function setStickerGridDisabled(disabled) {
+  stickerGrid.querySelectorAll(".sticker-btn").forEach((b) => { b.disabled = disabled; });
+}
+
 async function sendSticker(btn, emoji) {
-  btn.disabled = true;
-  setTimeout(() => { btn.disabled = false; }, 120);
+  if (stickerLocked) return;
+  stickerLocked = true;
+  setStickerGridDisabled(true);
+  setTimeout(() => {
+    stickerLocked = false;
+    setStickerGridDisabled(false);
+  }, STICKER_COOLDOWN_MS);
+
   try {
     await addDoc(collection(db, "stickers"), {
       emoji,
