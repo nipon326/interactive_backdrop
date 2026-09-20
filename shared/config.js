@@ -3,12 +3,12 @@
 // 1) Firebase project config
 //    ไปเอาได้จาก Firebase Console > Project settings > General > Your apps > Web app > SDK setup and configuration
 export const firebaseConfig = {
-  apiKey: "PASTE_FIREBASE_API_KEY",
-  authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
-  projectId: "PASTE_PROJECT_ID",
-  storageBucket: "PASTE_PROJECT_ID.appspot.com",
-  messagingSenderId: "PASTE_SENDER_ID",
-  appId: "PASTE_APP_ID",
+  apiKey: "AIzaSyBuYdJE03lIIX4zgFtb9xPtMFiztc1TNP4",
+  authDomain: "interactive-backdrop.firebaseapp.com",
+  projectId: "interactive-backdrop",
+  storageBucket: "interactive-backdrop.firebasestorage.app",
+  messagingSenderId: "947468517353",
+  appId: "1:947468517353:web:bd5adcd2ec500b36b91578",
 };
 
 // 2) Google Drive (สำหรับดึงรายการภาพ backdrop) — ใช้เฉพาะในหน้า /control
