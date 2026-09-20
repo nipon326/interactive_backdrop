@@ -17,7 +17,7 @@ export const firebaseConfig = {
 //    DRIVE_API_KEY: สร้างจาก Google Cloud Console > APIs & Services > Credentials
 //    (ต้องเปิด Google Drive API ก่อน และตั้ง restriction: API = Drive API, HTTP referrer = โดเมนเว็บนี้)
 export const DRIVE_FOLDER_ID = "PASTE_DRIVE_FOLDER_ID";
-export const DRIVE_API_KEY = "PASTE_DRIVE_API_KEY";
+export const DRIVE_API_KEY = "AIzaSyBuYdJE03lIIX4zgFtb9xPtMFiztc1TNP4"; // ใช้ตัวเดียวกับ Firebase browser key ที่เพิ่ม Drive API เข้าไปแล้ว
 
 // 3) PIN สำหรับล็อกหน้า /control กันคนเดินผ่านเผลอกด (ไม่ใช่ระบบความปลอดภัยจริงจัง)
 export const CONTROL_PIN = "1234";
