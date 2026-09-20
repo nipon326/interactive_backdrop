@@ -103,16 +103,16 @@ function spawnComment({ name, text }) {
   const el = document.createElement("div");
   el.className = "floating-comment";
 
-  const nameEl = document.createElement("span");
-  nameEl.className = "comment-name";
-  nameEl.textContent = name || "ไม่ระบุชื่อ";
-
   const textEl = document.createElement("span");
   textEl.className = "comment-text";
   textEl.textContent = text;
 
-  el.appendChild(nameEl);
+  const nameEl = document.createElement("span");
+  nameEl.className = "comment-name";
+  nameEl.textContent = `- ${name || "ไม่ระบุชื่อ"}`;
+
   el.appendChild(textEl);
+  el.appendChild(nameEl);
 
   el.style.setProperty("--x", `${Math.random() * 6}vw`);
   el.style.setProperty("--drift", `${1 + Math.random() * 5}vw`);

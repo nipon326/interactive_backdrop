@@ -75,17 +75,19 @@ body.mode-wordcloud #wordcloud-canvas { display: block; }
   border-left: 4px solid #f2c6d3;
 }
 
-.comment-name {
-  display: block;
-  font-weight: 700;
-  font-size: 0.8rem;
-  color: #bfe0f5;
-  margin-bottom: 2px;
-}
-
 .comment-text {
   display: block;
   word-break: break-word;
+}
+
+.comment-name {
+  display: block;
+  text-align: right;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #bfe0f5;
+  margin-top: 4px;
 }
 
 @keyframes floatUpComment {
