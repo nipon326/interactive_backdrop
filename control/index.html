@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Control — ทีมงาน</title>
+<link rel="stylesheet" href="../shared/theme.css" />
+<link rel="stylesheet" href="control.css" />
+</head>
+<body>
+  <header class="control-header">
+    <h1>🎛️ Control Panel — Interactive Backdrop</h1>
+    <div class="mode-actions">
+      <button id="btn-mode-wordcloud" class="btn-secondary">🌥️ เข้าโหมด Word Cloud</button>
+      <button id="btn-refresh-wordcloud" class="btn-secondary">🔄 Refresh Word Cloud</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>🖼️ ภาพ Backdrop (จาก Google Drive)</h2>
+      <div class="row">
+        <button id="btn-load-drive" class="btn-primary">โหลดรายการภาพจาก Drive</button>
+        <span id="drive-status"></span>
+      </div>
+      <div id="image-grid" class="image-grid"></div>
+    </section>
+
+    <section class="panel">
+      <h2>❓ คำถามรอ approve</h2>
+      <div id="pending-list" class="pending-list">
+        <p class="empty-hint">ยังไม่มีคำถามเข้ามา</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>🔗 QR สำหรับผู้ร่วมงาน (/join)</h2>
+      <div class="row qr-row">
+        <img id="qr-image" alt="QR code" />
+        <div>
+          <p id="join-url"></p>
+          <button id="btn-copy-link" class="btn-secondary">คัดลอกลิงก์</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="control.js?v=1"></script>
+</body>
+</html>

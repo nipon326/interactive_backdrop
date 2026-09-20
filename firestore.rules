@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /state/backdrop {
+      allow read: if true;
+      allow write: if request.resource.data.keys().hasOnly(['mode', 'fileId', 'updatedAt'])
+                   && request.resource.data.mode in ['image', 'wordcloud']
+                   && request.resource.data.fileId is string
+                   && request.resource.data.updatedAt == request.time;
+    }
+
+    match /stickers/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['emoji', 'createdAt'])
+                    && request.resource.data.emoji is string
+                    && request.resource.data.emoji.size() > 0
+                    && request.resource.data.emoji.size() <= 8
+                    && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    match /messages/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['name', 'text', 'createdAt'])
+                    && request.resource.data.name is string  && request.resource.data.name.size() <= 60
+                    && request.resource.data.text is string  && request.resource.data.text.size() > 0
+                    && request.resource.data.text.size() <= 280
+                    && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    match /questions/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['name', 'text', 'status', 'createdAt'])
+                    && request.resource.data.name is string  && request.resource.data.name.size() <= 60
+                    && request.resource.data.text is string  && request.resource.data.text.size() > 0
+                    && request.resource.data.text.size() <= 280
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.createdAt == request.time;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'approvedAt'])
+                    && request.resource.data.status in ['pending', 'approved', 'rejected']
+                    && request.resource.data.name == resource.data.name
+                    && request.resource.data.text == resource.data.text;
+      allow delete: if false;
+    }
+  }
+}
