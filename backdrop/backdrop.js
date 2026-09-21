@@ -5,8 +5,8 @@ import {
 import { driveImageUrlCandidates } from "../shared/drive.js";
 import { THAI_STOPWORDS } from "../shared/thai-stopwords.js";
 
-const MAX_STICKERS = 36;
-const MAX_COMMENTS = 6;
+const MAX_STICKERS = 22;
+const MAX_COMMENTS = 4;
 let stickerCount = 0;
 let commentCount = 0;
 
@@ -66,10 +66,11 @@ function spawnSticker(data) {
   stickerCount += 1;
   const el = document.createElement("div");
   el.className = "floating-sticker";
-  el.style.setProperty("--x", `${58 + Math.random() * 37}vw`);
+  el.style.setProperty("--x", `${55 + Math.random() * 35}vw`);
   el.style.setProperty("--drift", `${Math.random() * 14 - 7}vw`);
-  el.style.setProperty("--size", `${1.8 + Math.random() * 1.6}rem`);
-  el.style.setProperty("--dur", `${2.5 + Math.random() * 2}s`);
+  // ขนาดใหญ่ขึ้นเยอะ — ห้องใหญ่ + ผู้ชมส่วนใหญ่เป็นผู้สูงวัย ต้องมองเห็นชัดจากที่นั่งไกลๆ
+  el.style.setProperty("--size", `${4 + Math.random() * 3.5}rem`);
+  el.style.setProperty("--dur", `${3 + Math.random() * 2}s`);
 
   if (kind === "image") {
     const img = document.createElement("img");
@@ -132,9 +133,10 @@ function spawnComment({ name, text }) {
   el.appendChild(textEl);
   el.appendChild(nameEl);
 
-  el.style.setProperty("--x", `${Math.random() * 6}vw`);
-  el.style.setProperty("--drift", `${1 + Math.random() * 5}vw`);
-  el.style.setProperty("--dur", `${5.5 + Math.random() * 1.5}s`);
+  el.style.setProperty("--x", `${Math.random() * 4}vw`);
+  el.style.setProperty("--drift", `${1 + Math.random() * 4}vw`);
+  // อยู่บนจอนานขึ้นด้วย เพราะตัวใหญ่ขึ้น ต้องมีเวลาให้อ่านทัน
+  el.style.setProperty("--dur", `${7 + Math.random() * 2}s`);
   el.addEventListener("animationend", () => { el.remove(); commentCount -= 1; });
   commentLayer.appendChild(el);
 }
