@@ -2,6 +2,8 @@ import { db } from "../shared/firebase-init.js";
 import {
   collection, addDoc, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { fetchOrderedImages, driveImageUrlCandidates } from "../shared/drive.js";
+import { STICKER_FOLDER_ID, DRIVE_API_KEY } from "../shared/config.js";
 
 // ---------- Tabs ----------
 document.querySelectorAll(".tab-btn").forEach((btn) => {
@@ -49,28 +51,37 @@ STICKERS.forEach((emoji) => {
   const btn = document.createElement("button");
   btn.className = "sticker-btn";
   btn.textContent = emoji;
-  btn.addEventListener("click", () => sendSticker(emoji));
+  btn.addEventListener("click", () => sendSticker({ kind: "emoji", value: emoji }));
   stickerGrid.appendChild(btn);
   throttledEls.push(btn);
 });
 
-// ---------- สติกเกอร์ที่พิมพ์เอง ----------
-const customInput = document.getElementById("custom-sticker-input");
-const customSendBtn = document.getElementById("custom-sticker-send");
-throttledEls.push(customSendBtn);
-
-customSendBtn.addEventListener("click", () => {
-  const val = customInput.value.trim().slice(0, 4);
-  if (!val) return;
-  sendSticker(val);
-  customInput.value = "";
-});
-customInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    customSendBtn.click();
-  }
-});
+// สติกเกอร์รูปภาพที่ทีมงานเพิ่มเองผ่าน Google Drive (ไม่บังคับ — ข้ามถ้ายังไม่ตั้งค่า)
+if (STICKER_FOLDER_ID && !STICKER_FOLDER_ID.startsWith("PASTE_")) {
+  fetchOrderedImages(STICKER_FOLDER_ID, DRIVE_API_KEY)
+    .then((files) => {
+      files.forEach((f) => {
+        const btn = document.createElement("button");
+        btn.className = "sticker-btn";
+        const img = document.createElement("img");
+        img.className = "sticker-btn-img";
+        img.alt = f.name;
+        const urls = driveImageUrlCandidates(f.id, 200);
+        let i = 0;
+        const tryNext = () => {
+          if (i >= urls.length) return;
+          img.onerror = () => { i += 1; tryNext(); };
+          img.src = urls[i];
+        };
+        tryNext();
+        btn.appendChild(img);
+        btn.addEventListener("click", () => sendSticker({ kind: "image", value: f.id }));
+        stickerGrid.appendChild(btn);
+        throttledEls.push(btn);
+      });
+    })
+    .catch((err) => console.error("โหลดสติกเกอร์รูปภาพจาก Drive ไม่สำเร็จ", err));
+}
 
 // throttle ระดับคนทั้งหน้า (ไม่ใช่แค่ปุ่มเดียว) กัน "ไล่กดคนละอันรัวๆ" หนีคูลดาวน์
 const STICKER_COOLDOWN_MS = 1000;
@@ -80,8 +91,8 @@ function setThrottledDisabled(disabled) {
   throttledEls.forEach((b) => { b.disabled = disabled; });
 }
 
-async function sendSticker(emoji) {
-  if (stickerLocked || !emoji) return;
+async function sendSticker({ kind, value }) {
+  if (stickerLocked || !value) return;
   stickerLocked = true;
   setThrottledDisabled(true);
   setTimeout(() => {
@@ -91,7 +102,8 @@ async function sendSticker(emoji) {
 
   try {
     await addDoc(collection(db, "stickers"), {
-      emoji,
+      kind,
+      value,
       createdAt: serverTimestamp(),
     });
   } catch (err) {

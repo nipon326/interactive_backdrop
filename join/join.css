@@ -89,13 +89,11 @@ body {
 
 .sticker-btn:disabled { opacity: 0.5; }
 
-.custom-sticker-row {
-  display: flex;
-  gap: 10px;
-  margin-top: 16px;
+.sticker-btn-img {
+  width: 70%;
+  height: 70%;
+  object-fit: contain;
 }
-.custom-sticker-row input { flex: 1; text-align: center; font-size: 1.3rem; }
-.custom-sticker-row button { padding: 0 20px; }
 
 #message-form, #question-form {
   display: flex;

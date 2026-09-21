@@ -1,6 +1,7 @@
 import { db } from "../shared/firebase-init.js";
 import {
-  collection, doc, setDoc, updateDoc, onSnapshot, query, where, orderBy, serverTimestamp,
+  collection, doc, setDoc, updateDoc, deleteDoc, writeBatch,
+  onSnapshot, query, where, orderBy, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { requirePin } from "../shared/pin-gate.js";
 import { fetchOrderedImages, driveImageUrlCandidates } from "../shared/drive.js";
@@ -14,6 +15,7 @@ const driveStatus = document.getElementById("drive-status");
 const previewImg = document.getElementById("current-preview-img");
 const previewLabel = document.getElementById("current-preview-label");
 let currentFileId = null;
+let currentMode = "image";
 let loadedFiles = [];
 
 document.getElementById("btn-load-drive").addEventListener("click", loadDriveImages);
@@ -61,8 +63,10 @@ async function loadDriveImages() {
 }
 
 async function selectImage(fileId) {
+  // ส่ง mode ปัจจุบันไปด้วยเสมอ (ไม่ใช้ merge บางส่วน) เพราะ rules บังคับให้ทุก write ต้องมีครบ 3 field
+  // เอฟเฟกต์จริงคือ "เปลี่ยนแค่ภาพ ไม่เปลี่ยนโหมด" — เลือกภาพได้ทั้งตอนโหมดภาพปกติและโหมด wordcloud
   await setDoc(doc(db, "state", "backdrop"), {
-    mode: "image",
+    mode: currentMode,
     fileId,
     updatedAt: serverTimestamp(),
   });
@@ -95,16 +99,26 @@ function updatePreview() {
 
 // state/backdrop เป็น shared state — ฟังตลอดเวลา เพื่อให้ทีมงานหลายคน/หลายเครื่องเห็นตรงกันเสมอ
 // (คนคุมภาพกับคนตรวจคอมเมนต์เปิด /control คนละเครื่องพร้อมกันได้ ข้อมูลจะ sync กันเองผ่าน Firestore)
+const modeWordcloudBtn = document.getElementById("btn-mode-wordcloud");
+const modeImageBtn = document.getElementById("btn-mode-image");
+
+function syncModeButtons() {
+  modeWordcloudBtn.classList.toggle("btn-active", currentMode === "wordcloud");
+  modeImageBtn.classList.toggle("btn-active", currentMode === "image");
+}
+
 onSnapshot(doc(db, "state", "backdrop"), (snap) => {
   if (!snap.exists()) return;
   const data = snap.data();
   currentFileId = data.fileId || null;
+  currentMode = data.mode === "wordcloud" ? "wordcloud" : "image";
   syncActiveThumb();
   updatePreview();
+  syncModeButtons();
 });
 
-// ---------- Mode switch (wordcloud) ----------
-document.getElementById("btn-mode-wordcloud").addEventListener("click", async () => {
+// ---------- Mode switch (wordcloud overlay ซ้อนทับภาพ background เดิม) ----------
+modeWordcloudBtn.addEventListener("click", async () => {
   await setDoc(doc(db, "state", "backdrop"), {
     mode: "wordcloud",
     fileId: currentFileId || "",
@@ -112,16 +126,13 @@ document.getElementById("btn-mode-wordcloud").addEventListener("click", async ()
   });
 });
 
-document.getElementById("btn-refresh-wordcloud").addEventListener("click", async () => {
-  // เขียน updatedAt ใหม่เพื่อสั่งให้ backdrop คำนวณ word cloud ใหม่ (ยังอยู่โหมด wordcloud อยู่แล้ว)
+modeImageBtn.addEventListener("click", async () => {
   await setDoc(doc(db, "state", "backdrop"), {
-    mode: "wordcloud",
+    mode: "image",
     fileId: currentFileId || "",
     updatedAt: serverTimestamp(),
   });
 });
-
-// กลับโหมดภาพง่ายๆ: คลิกภาพใดๆ ในกริดจะพากลับโหมด image โดยอัตโนมัติ (ผ่าน selectImage)
 
 // ---------- Pending comments moderation ----------
 const pendingList = document.getElementById("pending-list");
@@ -189,6 +200,65 @@ async function setStatus(id, status) {
     approvedAt: serverTimestamp(),
   });
 }
+
+// ---------- จัดการข้อความฝากถึงน้องๆ (Word Cloud source) ----------
+const messagesList = document.getElementById("messages-list");
+const messagesCount = document.getElementById("messages-count");
+let currentMessageIds = [];
+
+const messagesQuery = query(collection(db, "messages"), orderBy("createdAt", "desc"));
+onSnapshot(
+  messagesQuery,
+  (snap) => {
+    currentMessageIds = snap.docs.map((d) => d.id);
+    messagesCount.textContent = `ทั้งหมด ${snap.size} ข้อความ`;
+    if (snap.empty) {
+      messagesList.innerHTML = '<p class="empty-hint">ยังไม่มีข้อความเข้ามา</p>';
+      return;
+    }
+    messagesList.innerHTML = "";
+    snap.forEach((docSnap) => {
+      const m = docSnap.data();
+      const item = document.createElement("div");
+      item.className = "pending-item";
+
+      const textEl = document.createElement("div");
+      textEl.className = "q-text";
+      textEl.textContent = m.text;
+
+      const nameEl = document.createElement("div");
+      nameEl.className = "q-name";
+      nameEl.textContent = `- ${m.name || "ไม่ระบุชื่อ"}`;
+
+      const actions = document.createElement("div");
+      actions.className = "q-actions";
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "btn-reject";
+      deleteBtn.textContent = "🗑️ ลบ";
+      deleteBtn.addEventListener("click", () => deleteDoc(doc(db, "messages", docSnap.id)));
+
+      actions.appendChild(deleteBtn);
+
+      item.appendChild(textEl);
+      item.appendChild(nameEl);
+      item.appendChild(actions);
+      messagesList.appendChild(item);
+    });
+  },
+  (err) => {
+    console.error("messages listener failed", err);
+    messagesList.innerHTML = '<p class="error-hint">โหลดข้อความไม่สำเร็จ</p>';
+  }
+);
+
+document.getElementById("btn-clear-messages").addEventListener("click", async () => {
+  if (currentMessageIds.length === 0) return;
+  if (!confirm(`ลบข้อความทั้งหมด ${currentMessageIds.length} รายการ? ย้อนกลับไม่ได้`)) return;
+  const batch = writeBatch(db);
+  currentMessageIds.forEach((id) => batch.delete(doc(db, "messages", id)));
+  await batch.commit();
+});
 
 // ---------- QR / join link ----------
 const joinUrl = new URL("../join/", window.location.href).toString();

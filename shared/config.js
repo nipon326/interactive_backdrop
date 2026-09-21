@@ -19,5 +19,10 @@ export const firebaseConfig = {
 export const DRIVE_FOLDER_ID = "19053_a9yvGCzIq0SQy9-E-Qdp5H9njQ-";
 export const DRIVE_API_KEY = "AIzaSyBuYdJE03lIIX4zgFtb9xPtMFiztc1TNP4"; // ใช้ตัวเดียวกับ Firebase browser key ที่เพิ่ม Drive API เข้าไปแล้ว
 
+// โฟลเดอร์ Google Drive แยกต่างหากสำหรับ "สติกเกอร์รูปภาพ" ที่อยากเพิ่มเอง (ไม่บังคับ)
+// วิธีใช้เหมือนโฟลเดอร์ภาพ backdrop: สร้างโฟลเดอร์ แชร์ "Anyone with the link", ใส่ไฟล์ภาพ (PNG/GIF พื้นหลังโปร่งใสจะสวยสุด)
+// ปล่อยเป็นค่าเริ่มต้นนี้ไว้ได้ถ้ายังไม่มีสติกเกอร์เพิ่ม ระบบจะข้ามไปใช้แค่ชุด emoji ที่มีอยู่แล้ว
+export const STICKER_FOLDER_ID = "PASTE_STICKER_DRIVE_FOLDER_ID";
+
 // 3) PIN สำหรับล็อกหน้า /control กันคนเดินผ่านเผลอกด (ไม่ใช่ระบบความปลอดภัยจริงจัง)
 export const CONTROL_PIN = "1234";

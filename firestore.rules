@@ -12,10 +12,11 @@ service cloud.firestore {
 
     match /stickers/{id} {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasOnly(['emoji', 'createdAt'])
-                    && request.resource.data.emoji is string
-                    && request.resource.data.emoji.size() > 0
-                    && request.resource.data.emoji.size() <= 8
+      allow create: if request.resource.data.keys().hasOnly(['kind', 'value', 'createdAt'])
+                    && request.resource.data.kind in ['emoji', 'image']
+                    && request.resource.data.value is string
+                    && request.resource.data.value.size() > 0
+                    && request.resource.data.value.size() <= 300
                     && request.resource.data.createdAt == request.time;
       allow update, delete: if false;
     }
@@ -27,7 +28,9 @@ service cloud.firestore {
                     && request.resource.data.text is string  && request.resource.data.text.size() > 0
                     && request.resource.data.text.size() <= 280
                     && request.resource.data.createdAt == request.time;
-      allow update, delete: if false;
+      allow update: if false;
+      // เปิดให้ลบได้ (ไม่มี auth) เพื่อให้ทีมงานเคลียร์ข้อความทดสอบ/ไม่เหมาะสมออกจาก Word Cloud ได้จากหน้า /control
+      allow delete: if true;
     }
 
     match /questions/{id} {

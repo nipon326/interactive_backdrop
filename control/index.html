@@ -12,7 +12,7 @@
     <h1>🎛️ Control Panel — Interactive Backdrop</h1>
     <div class="mode-actions">
       <button id="btn-mode-wordcloud" class="btn-secondary">🌥️ เข้าโหมด Word Cloud</button>
-      <button id="btn-refresh-wordcloud" class="btn-secondary">🔄 Refresh Word Cloud</button>
+      <button id="btn-mode-image" class="btn-secondary">🖼️ กลับโหมดภาพปกติ</button>
     </div>
   </header>
 
@@ -29,6 +29,7 @@
         <button id="btn-load-drive" class="btn-primary">โหลดรายการภาพจาก Drive</button>
         <span id="drive-status"></span>
       </div>
+      <p class="tiny-hint">เลือกภาพในนี้เพื่อเปลี่ยนพื้นหลัง — ใช้เป็นพื้นหลังทั้งโหมดภาพปกติและโหมด Word Cloud (คำจะลอยซ้อนทับภาพนี้)</p>
       <div id="image-grid" class="image-grid"></div>
     </section>
 
@@ -36,6 +37,18 @@
       <h2>💬 คอมเมนต์รอ approve</h2>
       <div id="pending-list" class="pending-list">
         <p class="empty-hint">ยังไม่มีคอมเมนต์เข้ามา</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>💌 จัดการข้อความฝากถึงน้องๆ (Word Cloud)</h2>
+      <p class="tiny-hint">ข้อความในนี้ทั้งหมดคือ source ของ Word Cloud ช่วงท้ายงาน ลบข้อความทดสอบ/ไม่เหมาะสมออกได้เลย</p>
+      <div class="row">
+        <button id="btn-clear-messages" class="btn-secondary btn-danger">🗑️ ลบข้อความทั้งหมด</button>
+        <span id="messages-count"></span>
+      </div>
+      <div id="messages-list" class="pending-list">
+        <p class="empty-hint">ยังไม่มีข้อความเข้ามา</p>
       </div>
     </section>
 
@@ -51,6 +64,6 @@
     </section>
   </main>
 
-  <script type="module" src="control.js?v=2"></script>
+  <script type="module" src="control.js?v=3"></script>
 </body>
 </html>

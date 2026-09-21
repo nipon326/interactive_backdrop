@@ -22,7 +22,17 @@ body { padding: 20px; max-width: 1000px; margin: 0 auto; }
 
 .panel h2 { margin-top: 0; font-size: 1.05rem; color: var(--blue-dark); }
 
+.tiny-hint { color: #888; font-size: 0.8rem; margin: 4px 0 10px; }
+
 .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.mode-actions .btn-active {
+  background: var(--blue-dark);
+  color: #fff;
+  border-color: var(--blue-dark);
+}
+
+.btn-danger { background: #fdecea; color: #c0392b; border: 2px solid #c0392b; }
 
 #drive-status { font-size: 0.9rem; color: #666; }
 

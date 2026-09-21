@@ -1,6 +1,6 @@
 import { db } from "../shared/firebase-init.js";
 import {
-  collection, doc, onSnapshot, query, orderBy, limit, where, getDocs,
+  collection, doc, onSnapshot, query, orderBy, limit, where,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { driveImageUrlCandidates } from "../shared/drive.js";
 import { THAI_STOPWORDS } from "../shared/thai-stopwords.js";
@@ -28,21 +28,17 @@ function setBackdropImage(fileId) {
   tryNext();
 }
 
-let wordCloudRenderedForVersion = null;
+let currentMode = "image";
 
 onSnapshot(doc(db, "state", "backdrop"), (snap) => {
   if (!snap.exists()) return;
   const data = snap.data();
-  if (data.mode === "wordcloud") {
-    document.body.classList.add("mode-wordcloud");
-    const version = data.updatedAt ? data.updatedAt.toMillis() : Date.now();
-    if (wordCloudRenderedForVersion !== version) {
-      wordCloudRenderedForVersion = version;
-      renderWordCloud();
-    }
-  } else {
-    document.body.classList.remove("mode-wordcloud");
-    setBackdropImage(data.fileId);
+  currentMode = data.mode === "wordcloud" ? "wordcloud" : "image";
+  document.body.classList.toggle("mode-wordcloud", currentMode === "wordcloud");
+  // พื้นหลังภาพยังคงอยู่เสมอ ไม่ว่าจะโหมดไหน — โหมด wordcloud แค่ซ้อนคำขึ้นด้านบนเป็น overlay
+  setBackdropImage(data.fileId);
+  if (currentMode === "wordcloud") {
+    renderWordCloud();
   }
 });
 
@@ -52,23 +48,45 @@ const stickerQuery = query(collection(db, "stickers"), orderBy("createdAt", "des
 onSnapshot(stickerQuery, (snap) => {
   if (stickersLoaded) {
     snap.docChanges().forEach((c) => {
-      if (c.type === "added") spawnSticker(c.doc.data().emoji);
+      if (c.type === "added") spawnSticker(c.doc.data());
     });
   }
   stickersLoaded = true;
 });
 
 // สติกเกอร์ลอยฝั่งขวาของจอ (ไม่กระจายเต็มขอบล่าง) กันไปบังกลางภาพ backdrop
-function spawnSticker(emoji) {
-  if (stickerCount >= MAX_STICKERS || !emoji) return;
+// รองรับทั้งสติกเกอร์ emoji และสติกเกอร์รูปภาพจาก Drive (ดู join.js/shared/config.js)
+function spawnSticker(data) {
+  if (!data || stickerCount >= MAX_STICKERS) return;
+  // เอกสารเก่าก่อนอัปเดตนี้มีแค่ field `emoji` เฉยๆ — รองรับไว้กันของเก่าพัง
+  const kind = data.kind || (data.emoji ? "emoji" : null);
+  const value = data.value || data.emoji;
+  if (!kind || !value) return;
+
   stickerCount += 1;
   const el = document.createElement("div");
   el.className = "floating-sticker";
-  el.textContent = emoji;
   el.style.setProperty("--x", `${58 + Math.random() * 37}vw`);
   el.style.setProperty("--drift", `${Math.random() * 14 - 7}vw`);
   el.style.setProperty("--size", `${1.8 + Math.random() * 1.6}rem`);
   el.style.setProperty("--dur", `${2.5 + Math.random() * 2}s`);
+
+  if (kind === "image") {
+    const img = document.createElement("img");
+    img.className = "sticker-img";
+    const urls = driveImageUrlCandidates(value, 200);
+    let i = 0;
+    const tryNext = () => {
+      if (i >= urls.length) return;
+      img.onerror = () => { i += 1; tryNext(); };
+      img.src = urls[i];
+    };
+    tryNext();
+    el.appendChild(img);
+  } else {
+    el.textContent = value;
+  }
+
   el.addEventListener("animationend", () => { el.remove(); stickerCount -= 1; });
   stickerLayer.appendChild(el);
 }
@@ -122,12 +140,32 @@ function spawnComment({ name, text }) {
 }
 
 // ---------- Word cloud ----------
-async function renderWordCloud() {
+// ฟังข้อความ "ฝากถึงน้องๆ" แบบ live ตลอดเวลา (ไม่ใช่ดึงครั้งเดียว) เพื่อให้ข้อความใหม่ที่ส่งเข้ามา
+// ระหว่างที่จออยู่ในโหมด wordcloud อัปเดตขึ้นจอเองทันที ไม่ต้องกด refresh/รีโหลดหน้า
+let messagesCache = [];
+let wordCloudRenderTimer = null;
+
+onSnapshot(
+  collection(db, "messages"),
+  (snap) => {
+    messagesCache = snap.docs.map((d) => d.data());
+    scheduleWordCloudRender();
+  },
+  (err) => console.error("messages listener failed", err)
+);
+
+function scheduleWordCloudRender() {
+  if (currentMode !== "wordcloud") return;
+  clearTimeout(wordCloudRenderTimer);
+  // debounce กันข้อความเข้ามาถี่ๆ ทำให้ canvas re-layout รัวจนกระตุก
+  wordCloudRenderTimer = setTimeout(renderWordCloud, 500);
+}
+
+function renderWordCloud() {
   try {
-    const snap = await getDocs(collection(db, "messages"));
     const counts = new Map();
-    snap.forEach((d) => {
-      const text = (d.data().text || "").trim();
+    messagesCache.forEach((d) => {
+      const text = (d.text || "").trim();
       if (!text) return;
       const chunks = text
         .split(/[\s,.!?๐-๙()\-–—"'“”:;\n\r]+/u)
@@ -158,9 +196,11 @@ async function renderWordCloud() {
       weightFactor: (size) => Math.pow(size, 0.85) * (window.innerWidth / 1024) * 10,
       fontFamily: "'Noto Sans Thai', sans-serif",
       color: () => {
-        const palette = ["#16325c", "#2d5f9e", "#4a90d9", "#f2c6d3", "#8fb8dd"];
+        const palette = ["#ffffff", "#bfe0f5", "#f2c6d3", "#ffe9a8", "#eaf6ff"];
         return palette[Math.floor(Math.random() * palette.length)];
       },
+      shadowColor: "rgba(0,0,0,0.55)",
+      shadowBlur: 6,
       backgroundColor: "transparent",
       rotateRatio: 0.15,
       minSize: 10,

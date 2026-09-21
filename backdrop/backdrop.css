@@ -26,10 +26,10 @@ html, body {
   width: 100vw;
   height: 100vh;
   display: none;
-  background: radial-gradient(circle at center, #eef6fc 0%, var(--blue-light, #bfe0f5) 100%);
+  /* ภาพ backdrop เดิมยังโชว์อยู่ข้างใต้เสมอ นี่แค่ scrim ให้ตัวหนังสืออ่านง่ายขึ้นทับภาพ */
+  background: rgba(10, 26, 48, 0.45);
 }
 
-body.mode-wordcloud #bg-container { display: none; }
 body.mode-wordcloud #wordcloud-canvas { display: block; }
 
 #sticker-layer, #comment-layer {
@@ -50,6 +50,13 @@ body.mode-wordcloud #wordcloud-canvas { display: block; }
   opacity: 0.92;
   animation: floatUpSticker var(--dur) ease-out forwards;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
+}
+
+.floating-sticker .sticker-img {
+  display: block;
+  width: var(--size);
+  height: var(--size);
+  object-fit: contain;
 }
 
 @keyframes floatUpSticker {
