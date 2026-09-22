@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap');
 
 :root {
-  --navy: #16325c;
+  --navy: #394E65; /* Blue Bottle Coffee blue, ตามที่ผู้จัดงานชอบ */
   --blue-dark: #2d5f9e;
   --blue-bright: #4a90d9;
   --blue-light: #bfe0f5;
@@ -9,7 +9,7 @@
   --cream: #f7f1e6;
   --white: #ffffff;
   --accent: #ff6b35;
-  --shadow: 0 4px 20px rgba(22, 50, 92, 0.25);
+  --shadow: 0 4px 20px rgba(57, 78, 101, 0.25);
   --radius: 16px;
 }
 

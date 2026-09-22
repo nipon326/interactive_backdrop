@@ -27,7 +27,7 @@ html, body {
   height: 100vh;
   display: none;
   /* ภาพ backdrop เดิมยังโชว์อยู่ข้างใต้เสมอ นี่แค่ scrim ให้ตัวหนังสืออ่านง่ายขึ้นทับภาพ */
-  background: rgba(10, 26, 48, 0.45);
+  background: rgba(30, 42, 56, 0.5);
 }
 
 body.mode-wordcloud #wordcloud-canvas { display: block; }
@@ -72,7 +72,7 @@ body.mode-wordcloud #wordcloud-canvas { display: block; }
   left: var(--x);
   max-width: 34vw;
   min-width: 320px;
-  background: rgba(16, 40, 76, 0.88);
+  background: rgba(57, 78, 101, 0.88);
   color: #fff;
   border-radius: 20px;
   padding: 18px 26px;
