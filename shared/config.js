@@ -26,3 +26,13 @@ export const STICKER_FOLDER_ID = "1gpeQROw-H1Z2_20a1kyfYVk7ux8eQDeS";
 
 // 3) PIN สำหรับล็อกหน้า /control กันคนเดินผ่านเผลอกด (ไม่ใช่ระบบความปลอดภัยจริงจัง)
 export const CONTROL_PIN = "1234";
+
+// 4) ข้อความหน้า /join — แก้ตรงนี้เวลาเอาระบบไปใช้งานอื่น ไม่ต้องแก้ index.html
+export const EVENT_TITLE = "💧 The Flow of Legacy";
+export const EVENT_SUBTITLE = "มาร่วมส่งความรู้สึกดีๆ ให้กันในวันนี้นะ 💙";
+export const EVENT_DATE = "23 กันยายน 2569";
+
+// 5) จำนวน "ช่อง" สำหรับสติกเกอร์/คอมเมนต์ที่ลอยขึ้นจอแบบ broadcast (ดูรายละเอียดใน backdrop.js/join.js/control.js)
+// เพิ่มได้ถ้างานใหญ่ขึ้น/คนเยอะขึ้น ไม่ต้องแก้ไฟล์อื่น
+export const STICKER_SLOTS = 40;
+export const COMMENT_BROADCAST_SLOTS = 12;

@@ -1,9 +1,17 @@
 import { db } from "../shared/firebase-init.js";
 import {
-  collection, addDoc, serverTimestamp,
+  collection, doc, setDoc, addDoc, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { fetchOrderedImages, driveImageUrlCandidates } from "../shared/drive.js";
-import { STICKER_FOLDER_ID, DRIVE_API_KEY } from "../shared/config.js";
+import {
+  STICKER_FOLDER_ID, DRIVE_API_KEY, STICKER_SLOTS,
+  EVENT_TITLE, EVENT_SUBTITLE, EVENT_DATE,
+} from "../shared/config.js";
+
+// ---------- ข้อความหัวหน้าเพจ (มาจาก config เดียว เผื่อเอาไปใช้งานอื่น) ----------
+document.getElementById("event-title").textContent = EVENT_TITLE;
+document.getElementById("event-subtitle").textContent = EVENT_SUBTITLE;
+document.getElementById("event-date").textContent = EVENT_DATE;
 
 // ---------- Tabs ----------
 document.querySelectorAll(".tab-btn").forEach((btn) => {
@@ -91,6 +99,10 @@ function setThrottledDisabled(disabled) {
   throttledEls.forEach((b) => { b.disabled = disabled; });
 }
 
+// สติกเกอร์เขียนลงช่อง (slot) คงที่จำนวน STICKER_SLOTS ช่อง แทนที่จะสร้างเอกสารใหม่ทุกครั้ง
+// (เดิมสร้างเอกสารใหม่ไม่รู้จบ ~2,300 ชิ้นในงานเดียว ทำให้ query ที่ /backdrop ช้าลงเรื่อยๆ
+//  จนสติกเกอร์ขึ้นจอเป็นกระจุกๆ ไม่ใช่ทันทีที่กด — สลับมาเขียนทับช่องเดิมทำให้จำนวนเอกสารคงที่
+//  และ /backdrop ฟังทั้งคอลเลกชันตรงๆ โดยไม่ต้องมี query/limit ที่ต้องคำนวณลำดับใหม่ทุกครั้ง)
 async function sendSticker({ kind, value }) {
   if (stickerLocked || !value) return;
   stickerLocked = true;
@@ -101,9 +113,11 @@ async function sendSticker({ kind, value }) {
   }, STICKER_COOLDOWN_MS);
 
   try {
-    await addDoc(collection(db, "stickers"), {
+    const slot = Math.floor(Math.random() * STICKER_SLOTS);
+    await setDoc(doc(db, "stickers", `slot_${slot}`), {
       kind,
       value,
+      nonce: Math.random().toString(36).slice(2),
       createdAt: serverTimestamp(),
     });
   } catch (err) {

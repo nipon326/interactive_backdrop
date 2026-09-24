@@ -10,15 +10,37 @@ service cloud.firestore {
                    && request.resource.data.updatedAt == request.time;
     }
 
-    match /stickers/{id} {
+    // ตอนนี้ stickers เป็น "ช่อง" (slot) จำนวนคงที่ที่ถูกเขียนทับซ้ำๆ (ดู STICKER_SLOTS ใน shared/config.js)
+    // แทนที่จะสร้างเอกสารใหม่ไม่จำกัดทุกครั้งที่มีคนกด — เพื่อความไวและกันคอลเลกชันบวมไม่รู้จบ
+    // จึงต้อง allow write (ครอบคลุมทั้ง create ตอนแรกและ update ตอนเขียนทับช่องเดิม) แทน allow create เฉยๆ
+    match /stickers/{slotId} {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasOnly(['kind', 'value', 'createdAt'])
+      allow write: if request.resource.data.keys().hasOnly(['kind', 'value', 'nonce', 'createdAt'])
                     && request.resource.data.kind in ['emoji', 'image']
                     && request.resource.data.value is string
                     && request.resource.data.value.size() > 0
                     && request.resource.data.value.size() <= 300
+                    && request.resource.data.nonce is string
+                    && request.resource.data.nonce.size() <= 20
                     && request.resource.data.createdAt == request.time;
-      allow update, delete: if false;
+      // เปิดให้ลบได้ (ไม่มี auth เหมือนคอลเลกชันอื่นในระบบนี้) เผื่อต้องเคลียร์/รีเซ็ตช่องก่อนเอาไปใช้งานถัดไป
+      allow delete: if true;
+    }
+
+    // ช่องคงที่สำหรับ "ยิง" คอมเมนต์ที่ approve แล้วให้ /backdrop ลอยขึ้นจอไว (ดู COMMENT_BROADCAST_SLOTS)
+    // ข้อมูลถาวรจริงยังอยู่ที่ /questions เหมือนเดิม อันนี้เป็นแค่ตัวจุดชนวนภาพเคลื่อนไหว
+    match /commentBroadcast/{slotId} {
+      allow read: if true;
+      allow write: if request.resource.data.keys().hasOnly(['name', 'text', 'nonce', 'createdAt'])
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() <= 60
+                    && request.resource.data.text is string
+                    && request.resource.data.text.size() > 0
+                    && request.resource.data.text.size() <= 280
+                    && request.resource.data.nonce is string
+                    && request.resource.data.nonce.size() <= 20
+                    && request.resource.data.createdAt == request.time;
+      allow delete: if true;
     }
 
     match /messages/{id} {

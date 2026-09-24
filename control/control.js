@@ -5,7 +5,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { requirePin } from "../shared/pin-gate.js";
 import { fetchOrderedImages, driveImageUrlCandidates } from "../shared/drive.js";
-import { DRIVE_FOLDER_ID, DRIVE_API_KEY } from "../shared/config.js";
+import { DRIVE_FOLDER_ID, DRIVE_API_KEY, COMMENT_BROADCAST_SLOTS } from "../shared/config.js";
 
 requirePin();
 
@@ -169,7 +169,7 @@ onSnapshot(
       const approveBtn = document.createElement("button");
       approveBtn.className = "btn-approve";
       approveBtn.textContent = "✅ Approve";
-      approveBtn.addEventListener("click", () => setStatus(docSnap.id, "approved"));
+      approveBtn.addEventListener("click", () => setStatus(docSnap.id, "approved", q));
 
       const rejectBtn = document.createElement("button");
       rejectBtn.className = "btn-reject";
@@ -194,11 +194,22 @@ onSnapshot(
   }
 );
 
-async function setStatus(id, status) {
+async function setStatus(id, status, questionData) {
   await updateDoc(doc(db, "questions", id), {
     status,
     approvedAt: serverTimestamp(),
   });
+  // "questions" ยังเป็นบันทึกถาวรสำหรับ moderation/ประวัติเหมือนเดิม — ส่วนนี้แค่ยิง broadcast
+  // แยกต่างหากไปช่องคงที่ (เหมือนสติกเกอร์) เพื่อให้ /backdrop ลอยคอมเมนต์ขึ้นจอได้ไวและไม่ต้องมี index
+  if (status === "approved" && questionData) {
+    const slot = Math.floor(Math.random() * COMMENT_BROADCAST_SLOTS);
+    await setDoc(doc(db, "commentBroadcast", `slot_${slot}`), {
+      name: questionData.name || "",
+      text: questionData.text,
+      nonce: Math.random().toString(36).slice(2),
+      createdAt: serverTimestamp(),
+    });
+  }
 }
 
 // ---------- จัดการข้อความฝากถึงน้องๆ (Word Cloud source) ----------

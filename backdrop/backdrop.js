@@ -1,6 +1,6 @@
 import { db } from "../shared/firebase-init.js";
 import {
-  collection, doc, onSnapshot, query, orderBy, limit, where,
+  collection, doc, onSnapshot,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { driveImageUrlCandidates } from "../shared/drive.js";
 import { THAI_STOPWORDS } from "../shared/thai-stopwords.js";
@@ -43,12 +43,14 @@ onSnapshot(doc(db, "state", "backdrop"), (snap) => {
 });
 
 // ---------- Stickers ----------
+// ฟังทั้งคอลเลกชัน "stickers" ตรงๆ (ไม่มี query/orderBy/limit) เพราะตอนนี้เป็นแค่จำนวนช่อง (slot) คงที่
+// ที่ join.js เขียนทับซ้ำๆ ไม่ใช่เอกสารใหม่ไม่จำกัดแบบเดิม — วิธีนี้ทำให้ Firestore ไม่ต้องคำนวณลำดับ/ตัดท้าย
+// ผลลัพธ์ใหม่ทุกครั้งที่มีคนกด ซึ่งเป็นสาเหตุที่สติกเกอร์เคยขึ้นจอเป็นกระจุกๆ ช้าตอนคนเยอะพร้อมกัน
 let stickersLoaded = false;
-const stickerQuery = query(collection(db, "stickers"), orderBy("createdAt", "desc"), limit(30));
-onSnapshot(stickerQuery, (snap) => {
+onSnapshot(collection(db, "stickers"), (snap) => {
   if (stickersLoaded) {
     snap.docChanges().forEach((c) => {
-      if (c.type === "added") spawnSticker(c.doc.data());
+      if (c.type === "added" || c.type === "modified") spawnSticker(c.doc.data());
     });
   }
   stickersLoaded = true;
@@ -92,28 +94,22 @@ function spawnSticker(data) {
   stickerLayer.appendChild(el);
 }
 
-// ---------- Approved question comments ----------
+// ---------- Approved comments ----------
+// เหมือนสติกเกอร์ — ฟัง collection "commentBroadcast" ตรงๆ (จำนวนช่องคงที่ ไม่มี query/limit)
+// คอลเลกชัน "questions" ยังเป็นแหล่งข้อมูลจริงสำหรับ moderation/ประวัติเหมือนเดิมที่ /control
+// แต่ตัวจุดชนวนที่ให้ /backdrop ลอยคอมเมนต์ขึ้นจอ ย้ายมาที่ commentBroadcast เพื่อความไวและไม่ต้องมี index
 let commentsLoaded = false;
-const commentQuery = query(
-  collection(db, "questions"),
-  where("status", "==", "approved"),
-  orderBy("createdAt", "desc"),
-  limit(20)
-);
 onSnapshot(
-  commentQuery,
+  collection(db, "commentBroadcast"),
   (snap) => {
     if (commentsLoaded) {
       snap.docChanges().forEach((c) => {
-        if (c.type === "added") spawnComment(c.doc.data());
+        if (c.type === "added" || c.type === "modified") spawnComment(c.doc.data());
       });
     }
     commentsLoaded = true;
   },
-  (err) => {
-    // มักเกิดจาก Firestore ยังไม่มี composite index สำหรับ query นี้ (ต้องสร้างครั้งแรกผ่าน Firebase Console)
-    console.error("approved comments listener failed", err);
-  }
+  (err) => console.error("comment broadcast listener failed", err)
 );
 
 function spawnComment({ name, text }) {
